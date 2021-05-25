@@ -41,22 +41,22 @@ class Parse5ka:
 class Parse5kaFromCategories(Parse5ka):
     def __init__(self, start_url, cat_url, save_path):
         super().__init__(start_url, save_path)
-        # self.start_url = start_url
+        self.start_url = start_url
         # self.save_path = save_path
         self.cat_url = cat_url
 
-    def get_categories(self):
+    def _get_categories(self):
         categories = self._get_response(self.cat_url)
         return categories.json()
 
     def run(self):
-        for category in self.get_categories():
+        for category in self._get_categories():
             data = {
                 'name': category['parent_group_name'],
                 'code': category['parent_group_code'],
                 'product': []
             }
-            new_url = self.start_url + '/?' + f'categories={category["parent_group_code"]}'
+            new_url = self.start_url + f'/?categories={category["parent_group_code"]}'
 
             for product in self._parse(new_url):
                 data['product'].append(product)
