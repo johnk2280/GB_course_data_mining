@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 .idea/
+/lesson_1_hw/lesson_1.py
