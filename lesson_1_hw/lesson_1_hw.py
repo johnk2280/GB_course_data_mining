@@ -77,6 +77,6 @@ if __name__ == '__main__':
     url = 'https://5ka.ru/api/v2/special_offers'
     url1 = 'https://5ka.ru/api/v2/categories'
     product_path = get_save_path('products')
-    parser = Parse5ka(url, product_path)
+    # parser = Parse5ka(url, product_path)
     parser_from_cat = Parse5kaFromCategories(url, url1, product_path)
     parser_from_cat.run()
