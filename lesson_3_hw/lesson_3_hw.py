@@ -3,9 +3,10 @@ import time
 import requests
 from urllib.parse import urljoin
 import bs4
-import lxml
 import pymongo
 from datetime import datetime
+from database.database import Database
+from database import models
 
 
 class GbBlogParse:
@@ -14,7 +15,7 @@ class GbBlogParse:
     }
     __parse_time = 0
 
-    def __init__(self, start_url, db, delay=1.0):
+    def __init__(self, start_url, db: Database, delay=1.0):
         self.start_url = start_url
         self.db = db
         self.delay = delay
@@ -66,7 +67,7 @@ class GbBlogParse:
         pagination_links = set(
             urljoin(response.url, itm.attrs.get('href'))
             for itm in ul_paginations.find_all('a') if itm.attrs.get('href')
-            )
+        )
         self.tasks_creator(pagination_links, self.parse_feed)
         post_wrapper = soup.find('div', attrs={'class': 'post-items-wrapper'})
         post_links = set(
@@ -88,8 +89,11 @@ class GbBlogParse:
             '%Y-%m-%dT%H:%M:%S%z'
         )
         data = {
-            'url': response.url,
-            'title': soup.find('h1', attrs={'class': 'blogpost-title'}).text,
+            'post_data': {
+                'url': response.url,
+                'title': soup.find('h1', attrs={'class': 'blogpost-title'}).text,
+                'id': int(soup.find('comments').attrs.get('commentable-id'))
+            },
             'author': {
                 'url': urljoin(response.url, author_name_tag.parent.attrs['href']),
                 'name': author_name_tag.text
@@ -122,13 +126,13 @@ class GbBlogParse:
         return result
 
     def _save_data(self, data: dict):
-        collection = self.db['gb_blog_parse']
-        collection.insert_one(data)
+        self.db.add_post(data)
 
 
 if __name__ == '__main__':
     client_db = pymongo.MongoClient('mongodb://localhost:27017')
+    orm_database = Database('sqlite:///gb_blog_parse.db')
     db = client_db['data_mining']
     url = 'https://gb.ru/posts'
-    parser = GbBlogParse(url, db)
+    parser = GbBlogParse(url, orm_database)
     parser.run()
