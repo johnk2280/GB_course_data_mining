@@ -87,8 +87,6 @@ class GbBlogParse:
             soup.find('div', attrs={'class': 'blogpost-date-views'}).find('time').get('datetime'),
             '%Y-%m-%dT%H:%M:%S%z'
         )
-        comments = self._get_comments(soup.find('comments'))
-
         data = {
             'url': response.url,
             'title': soup.find('h1', attrs={'class': 'blogpost-title'}).text,
@@ -98,7 +96,7 @@ class GbBlogParse:
             },
             'img_link': img_link,
             'post_date': post_date,
-            'comments': comments
+            'comments': self._get_comments(soup.find('comments'))
         }
         self._save_data(data)
 
@@ -121,7 +119,7 @@ class GbBlogParse:
                 }
                 result.append(data)
 
-            return result
+        return result
 
     def _save_data(self, data: dict):
         collection = self.db['gb_blog_parse']
