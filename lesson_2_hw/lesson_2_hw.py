@@ -88,8 +88,11 @@ class GbBlogParse:
             '%Y-%m-%dT%H:%M:%S%z'
         )
         data = {
-            'url': response.url,
-            'title': soup.find('h1', attrs={'class': 'blogpost-title'}).text,
+            'post_data': {
+                'url': response.url,
+                'title': soup.find('h1', attrs={'class': 'blogpost-title'}).text,
+                'id': int(soup.find('comments').attrs.get('commentable-id'))
+            },
             'author': {
                 'url': urljoin(response.url, author_name_tag.parent.attrs['href']),
                 'name': author_name_tag.text
