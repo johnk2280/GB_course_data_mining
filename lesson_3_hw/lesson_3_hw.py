@@ -6,7 +6,6 @@ import bs4
 import pymongo
 from datetime import datetime
 from database.database import Database
-from database import models
 
 
 class GbBlogParse:
