@@ -52,7 +52,6 @@ class GbBlogParse:
             self.done_urls.add(url)
 
     def run(self):
-
         while True:
             try:
                 task = self.tasks.pop(0)
@@ -91,47 +90,40 @@ class GbBlogParse:
             'post_data': {
                 'url': response.url,
                 'title': soup.find('h1', attrs={'class': 'blogpost-title'}).text,
-                'id': int(soup.find('comments').attrs.get('commentable-id'))
+                'id': int(soup.find('comments').attrs.get('commentable-id')),
+                'img_link': img_link,
+                'post_date': post_date
             },
-            'author': {
+            'author_data': {
                 'url': urljoin(response.url, author_name_tag.parent.attrs['href']),
                 'name': author_name_tag.text
             },
-            'img_link': img_link,
-            'post_date': post_date,
-            'comments': self._get_comments(soup.find('comments'))
+            'comments_data': self._get_comments(soup.find('comments')),
+            'tag_data': [
+                {'url': urljoin(response.url, el.attrs.get('href')),
+                 'name': el.text} for el in soup.find_all('a', attrs={'class': 'small'})
+            ]
         }
         self._save_data(data)
 
     def _get_comments(self, tag: bs4.element.Tag) -> list:
-        result = []
-        if tag:
-            params = {
-                'commentable_type': tag.get('commentable-type'),
-                'commentable_id': tag.get('commentable-id'),
-                'order': tag.get('order')
-            }
-            url = 'https://gb.ru/api/v2/comments'
-            response = self._get_response(url, params=params)
-            comments = response.json()
-            for comment in comments:
-                data = {
-                    'comment_author': comment['comment']['user'].get('full_name'),
-                    'comment_body': comment['comment'].get('body'),
-                    'comment_children': comment['comment'].get('children')
-                }
-                result.append(data)
-
-        return result
+        url = 'https://gb.ru/api/v2/comments'
+        params = {
+            'commentable_type': tag.get('commentable-type'),
+            'commentable_id': tag.get('commentable-id'),
+            'order': tag.get('order')
+        }
+        response = self._get_response(url, params=params)
+        return response.json()
 
     def _save_data(self, data: dict):
         self.db.add_post(data)
 
 
 if __name__ == '__main__':
-    client_db = pymongo.MongoClient('mongodb://localhost:27017')
+    # client_db = pymongo.MongoClient('mongodb://localhost:27017')
     orm_database = Database('sqlite:///gb_blog_parse.db')
-    db = client_db['data_mining']
+    # db = client_db['data_mining']
     url = 'https://gb.ru/posts'
     parser = GbBlogParse(url, orm_database)
     parser.run()
