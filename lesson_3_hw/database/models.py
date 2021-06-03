@@ -52,7 +52,7 @@ class Tag(Base):
 class Comment(Base):
     __tablename__ = 'comment'
     id = Column(Integer, primary_key=True, unique=True)
-    parent_id = Column(Integer, ForeignKey('comment.id'), nullable=False)
+    parent_id = Column(Integer, ForeignKey('comment.id'), nullable=True)
     likes_count = Column(Integer)
     body = Column(String)
     created_at = Column(DateTime, nullable=False)
