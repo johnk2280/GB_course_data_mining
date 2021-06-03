@@ -31,6 +31,7 @@ class Post(Base):
     post_date = Column(DateTime)
     author_id = Column(Integer, ForeignKey('author.id'), nullable=False)
     author = relationship('Author', backref='posts')
+    tags = relationship('Tag', secondary=tag_post, backref='posts')
 
 
 class Author(Base):
@@ -45,7 +46,7 @@ class Tag(Base):
     __tablename__ = 'tag'
     id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     url = Column(String(2048), nullable=False, unique=True)
-    name = Column(String, nullable=False, unique=True)
+    name = Column(String, nullable=False)
 
 
 class Comment(Base):

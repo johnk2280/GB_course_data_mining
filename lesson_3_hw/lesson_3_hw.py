@@ -31,7 +31,7 @@ class GbBlogParse:
             response = requests.get(url, params=params, headers=self.headers)
             print(f'RESPONSE: {response.url}')
             self.__parse_time = time.time()
-            if response.status_code == 200:
+            if response.status_code in (200, 206):
                 return response
 
             return f'Something went wrong', response.status_code
@@ -77,6 +77,7 @@ class GbBlogParse:
     def parse_post(self, response: requests.Response):
         soup = bs4.BeautifulSoup(response.text, 'lxml')
         author_name_tag = soup.find('div', attrs={'itemprop': 'author'})
+        author_url = author_name_tag.parent.attrs['href']
         try:
             img_link = soup.find('div', attrs={'class': 'blogpost-content'}).find('img').get('src')
         except AttributeError:
@@ -95,8 +96,9 @@ class GbBlogParse:
                 'post_date': post_date
             },
             'author_data': {
-                'url': urljoin(response.url, author_name_tag.parent.attrs['href']),
-                'name': author_name_tag.text
+                'url': urljoin(response.url, author_url),
+                'name': author_name_tag.text,
+                'gb_id': int(author_url.split('/')[-1])
             },
             'comments_data': self._get_comments(soup.find('comments')),
             'tag_data': [

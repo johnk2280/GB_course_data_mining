@@ -16,11 +16,16 @@ class Database:
 
         return instance
 
+    def _create_comments(self, post_id, data):
+        pass
+
     def add_post(self, data):
         session = self.maker()
         post = self.get_or_create(session, models.Post, 'id', data['post_data'])
-        author = self.get_or_create(session, models.Author, 'url', data['author'])
-        post.author = author
+        post.author = self.get_or_create(session, models.Author, 'url', data['author_data'])
+        post.tags.extend(
+            self.get_or_create(session, models.Tag, 'url', tag) for tag in data['tag_data']
+        )
         session.add(post)
         try:
             session.commit()
@@ -28,5 +33,6 @@ class Database:
             session.rollback()
         finally:
             session.close()
+        self._create_comments()
 
         print(1)
