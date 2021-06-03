@@ -35,12 +35,10 @@ class Database:
             comment_db.author = author
             comment_db.post_id = post_id
             session.add(comment_db)
-            session.commit()
-
-            # try:
-            #     session.commit()
-            # except Exception:
-            #     session.rollback()
+            try:
+                session.commit()
+            except Exception:
+                session.rollback()
 
             if comment["comment"]["children"]:
                 data.extend(comment["comment"]["children"])
