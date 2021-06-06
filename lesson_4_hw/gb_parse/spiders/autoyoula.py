@@ -1,4 +1,6 @@
 import scrapy
+from urllib.parse import unquote
+import re
 
 
 class AutoyoulaSpider(scrapy.Spider):
@@ -29,9 +31,29 @@ class AutoyoulaSpider(scrapy.Spider):
             'a.SerpSnippet_name__3F7Yu',
             self.car_parse
         )
-        print(1)
 
     def car_parse(self, response):
-        print(1)
+        advert_data = {
+            'advert_title': response.css('.AdvertCard_advertTitle__1S1Ak::text').extract_first(),
+            'advert_image_links': [
+                el.attrib.get('src')
+                for el in response.css('.PhotoGallery_block__1ejQ1 img.PhotoGallery_photoImage__2mHGn')
+            ],
+            'description': response.css(
+                '.AdvertCard_description__2bVlR div.AdvertCard_descriptionInner__KnuRi::text'
+            ).extract_first(),
+            'seller_data': self._get_seller_data(response)
+
+        }
+
+    def _get_seller_data(self, response) -> dict:
+        sub_string = 'window.transitState = decodeURIComponent'
+        id_pattern = r'"youlaId","(\w+)","avatar"'
+        for selector in response.css('script'):
+            if sub_string in selector.extract():
+                component = unquote(selector.extract())
+                seller_id = re.findall(id_pattern, component)[0]
+                seller_url = f'https://youla.ru/user/{seller_id}'
+                print(1)
 
 
