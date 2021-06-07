@@ -1,12 +1,18 @@
 import scrapy
 from urllib.parse import unquote
 import re
+import pymongo
 
 
 class AutoyoulaSpider(scrapy.Spider):
     name = 'autoyoula'
     allowed_domains = ['auto.youla.ru']
     start_urls = ['https://auto.youla.ru/']
+
+    def __init__(self, *args, **kwargs):
+        super(AutoyoulaSpider, self).__init__(*args, **kwargs)
+        self.client_db = pymongo.MongoClient('mongodb://localhost:27017')
+        self.db = self.client_db['data_mining']
 
     def _get_follow(self, response, selector_str, callback):
         for a_link in response.css(selector_str):
@@ -45,15 +51,20 @@ class AutoyoulaSpider(scrapy.Spider):
             'seller_data': self._get_seller_data(response)
 
         }
+        self._save(advert_data)
+
+    def _save(self, data):
+        collection = self.db['autoyoula_parse']
+        collection.insert_one(data)
 
     def _get_seller_data(self, response) -> dict:
         sub_string = 'window.transitState = decodeURIComponent'
         id_pattern = r'"youlaId","(\w+)","avatar"'
+        phone_pattern = r'"phone","(\w+)==","time"'
         for selector in response.css('script'):
             if sub_string in selector.extract():
                 component = unquote(selector.extract())
                 seller_id = re.findall(id_pattern, component)[0]
+                seller_phone = re.findall(phone_pattern, component)[0]
                 seller_url = f'https://youla.ru/user/{seller_id}'
-                print(1)
-
-
+                return {'seller_id': seller_id, 'seller_url': seller_url, 'seller_phone': seller_phone}
