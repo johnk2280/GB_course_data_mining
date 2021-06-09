@@ -15,41 +15,43 @@ class AutoyoulaSpider(scrapy.Spider):
         self.db = self.client_db['data_mining']
 
     def _get_follow(self, response, selector_str, callback):
-        for a_link in response.css(selector_str):
-            url = a_link.attrib.get('href')
-            yield response.follow(url, callback=callback)
+        for a_link in response.xpath(selector_str):
+            yield response.follow(a_link, callback=callback)
 
     def parse(self, response):
         yield from self._get_follow(
             response,
-            '.TransportMainFilters_brandsList__2tIkv a.blackLink',
+            '//div[contains(@class, "TransportMainFilters_brandsList")]//a[@data-target="brand"]/@href',
             self.brand_parse
         )
 
     def brand_parse(self, response):
         yield from self._get_follow(
             response,
-            '.Paginator_block__2XAPy a.Paginator_button__u1e7D',
+            '//div[contains(@class, "Paginator_block")]//a[@data-target-id="button-link-serp-paginator"]/@href',
             self.brand_parse
         )
         yield from self._get_follow(
             response,
-            'a.SerpSnippet_name__3F7Yu',
+            '//article[@data-target="serp-snippet"]//a[contains(@class, "SerpSnippet_name")]/@href',
             self.car_parse
         )
 
     def car_parse(self, response):
         advert_data = {
-            'advert_title': response.css('.AdvertCard_advertTitle__1S1Ak::text').extract_first(),
-            'advert_image_links': [
-                el.attrib.get('src')
-                for el in response.css('.PhotoGallery_block__1ejQ1 img.PhotoGallery_photoImage__2mHGn')
-            ],
-            'description': response.css(
-                '.AdvertCard_description__2bVlR div.AdvertCard_descriptionInner__KnuRi::text'
+            'advert_title': response.xpath(
+                '//div[contains(@class, "AdvertCard_advertTitle")]/text()'
+            ).extract_first(),
+            'advert_price': float(response.xpath(
+                '//div[contains(@class, "AdvertCard_price")]/text()'
+            ).extract_first().replace('\u2009', '')),
+            'advert_image_links': response.xpath(
+                '//div[contains(@class, "PhotoGallery_block")]//img[contains(@class, "PhotoGallery_photoImage")]/@src'
+            ).extract(),
+            'description': response.xpath(
+                '//div[contains(@class, "AdvertCard_descriptionInner")]/text()'
             ).extract_first(),
             'seller_data': self._get_seller_data(response)
-
         }
         self._save(advert_data)
 
@@ -61,10 +63,13 @@ class AutoyoulaSpider(scrapy.Spider):
         sub_string = 'window.transitState = decodeURIComponent'
         id_pattern = r'"youlaId","(\w+)","avatar"'
         phone_pattern = r'"phone","(\w+)==","time"'
-        for selector in response.css('script'):
-            if sub_string in selector.extract():
-                component = unquote(selector.extract())
-                seller_id = re.findall(id_pattern, component)[0]
-                seller_phone = re.findall(phone_pattern, component)[0]
-                seller_url = f'https://youla.ru/user/{seller_id}'
-                return {'seller_id': seller_id, 'seller_url': seller_url, 'seller_phone': seller_phone}
+        try:
+            for selector in response.css('script'):
+                if sub_string in selector.extract():
+                    component = unquote(selector.extract())
+                    seller_id = re.findall(id_pattern, component)[0]
+                    seller_phone = re.findall(phone_pattern, component)[0]
+                    seller_url = f'https://youla.ru/user/{seller_id}'
+                    return {'seller_id': seller_id, 'seller_url': seller_url, 'seller_phone': seller_phone}
+        except (TypeError, IndexError) as err:
+            pass
