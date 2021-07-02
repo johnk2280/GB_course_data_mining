@@ -129,6 +129,9 @@ dmypy.json
 .pyre/
 
 .idea/
-/lesson_1_hw/lesson_1.py
+
 /temp.py
-/lesson_3_hw/gb_blog_parse.db
+
+/products/
+/tmp.json
+
