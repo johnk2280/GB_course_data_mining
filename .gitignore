@@ -129,6 +129,4 @@ dmypy.json
 .pyre/
 
 .idea/
-/temp.py
-/lesson_1_hw/lesson_1.py
-/lesson_3_hw/gb_blog_parse.db
+
